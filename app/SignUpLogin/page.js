@@ -29,7 +29,7 @@ const Page = () => {
     myHeaders.append("Content-Type", "application/json" );
   
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/signup`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_URL}api/signup`, {
         method: "POST",
         body: JSON.stringify(data),
         headers: myHeaders,
