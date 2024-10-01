@@ -1,18 +1,15 @@
 import connectDB from "@/db/connectDb";
 import signup from "@/models/signup";
 import { NextResponse } from "next/server";
-import bcrypt from 'bcrypt'; // Import bcrypt for hashing
+import CryptoJS from "crypto-js";
 import jwt from 'jsonwebtoken';
 
 export async function POST(request) {
     try {
         await connectDB();
         const body = await request.json();
-
-        // Hash the password using bcrypt
-        const hashedPassword = await bcrypt.hash(body.password, 10);
-
-        // Create a new user
+        const hashedPassword = CryptoJS.AES.encrypt(body.password, 'secret123').toString();
+        
         let details = new signup({
             firstName: body.firstName,
             lastName: body.lastName,
@@ -23,15 +20,44 @@ export async function POST(request) {
             userType: body.userType
         });
 
-        // Save the user to the database
         await details.save();
+        const token = jwt.sign({ id: details._id }, 'adfadlfakdlfd', { expiresIn: '10d' });
 
-        // Create a JWT token
-        const token = jwt.sign({ id: details._id }, process.env.JWT_SECRET || 'defaultSecret', { expiresIn: '10d' });
-
-        return NextResponse.json({ success: true, token }, { status: 200 });
-    } catch (e) {
-        console.error("Registration error:", e.message);
-        return NextResponse.json({ success: false, error: "Registration failed. Please try again." }, { status: 500 });
+        // Add CORS headers to the response
+        return NextResponse.json(
+            { success: true, token },
+            {
+                status: 200,
+                headers: {
+                    'Access-Control-Allow-Origin': '*', // Change '*' to your frontend URL for production
+                    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+                    'Access-Control-Allow-Headers': 'Content-Type',
+                }
+            }
+        );
+    } 
+    catch (e) {
+        console.log(e.message);
+        return NextResponse.json(
+            { success: false, error: "An error occurred" },
+            {
+                status: 500,
+                headers: {
+                    'Access-Control-Allow-Origin': '*', // Change '*' to your frontend URL for production
+                    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+                    'Access-Control-Allow-Headers': 'Content-Type',
+                }
+            }
+        );
     }
+}
+export async function OPTIONS(request) {
+    return NextResponse.json({}, {
+        status: 200,
+        headers: {
+            'Access-Control-Allow-Origin': '*', // Change '*' to your frontend URL for production
+            'Access-Control-Allow-Methods': 'POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type',
+        }
+    });
 }
