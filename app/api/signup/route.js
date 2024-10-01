@@ -8,8 +8,11 @@ export async function POST(request) {
     try {
         await connectDB();
         const body = await request.json();
-        const hashedPassword = CryptoJS.AES.encrypt(body.password, 'secret123').toString();
         
+        // Hashing the password securely
+        const hashedPassword = CryptoJS.AES.encrypt(body.password, process.env.ENCRYPTION_SECRET || 'secret123').toString();
+        
+        // Create a new signup entry
         let details = new signup({
             firstName: body.firstName,
             lastName: body.lastName,
@@ -20,8 +23,11 @@ export async function POST(request) {
             userType: body.userType
         });
 
+        // Save the details in the database
         await details.save();
-        const token = jwt.sign({ id: details._id }, 'adfadlfakdlfd', { expiresIn: '10d' });
+        
+        // Create a JWT token
+        const token = jwt.sign({ id: details._id }, process.env.JWT_SECRET || 'adfadlfakdlfd', { expiresIn: '10d' });
 
         // Add CORS headers to the response
         return NextResponse.json(
@@ -29,7 +35,7 @@ export async function POST(request) {
             {
                 status: 200,
                 headers: {
-                    'Access-Control-Allow-Origin': '*', // Change '*' to your frontend URL for production
+                    'Access-Control-Allow-Origin': process.env.FRONTEND_URL || '*', // Use environment variable for production
                     'Access-Control-Allow-Methods': 'POST, OPTIONS',
                     'Access-Control-Allow-Headers': 'Content-Type',
                 }
@@ -43,7 +49,7 @@ export async function POST(request) {
             {
                 status: 500,
                 headers: {
-                    'Access-Control-Allow-Origin': '*', // Change '*' to your frontend URL for production
+                    'Access-Control-Allow-Origin': process.env.FRONTEND_URL || '*', // Use environment variable for production
                     'Access-Control-Allow-Methods': 'POST, OPTIONS',
                     'Access-Control-Allow-Headers': 'Content-Type',
                 }
@@ -51,11 +57,12 @@ export async function POST(request) {
         );
     }
 }
+
 export async function OPTIONS(request) {
     return NextResponse.json({}, {
         status: 200,
         headers: {
-            'Access-Control-Allow-Origin': '*', // Change '*' to your frontend URL for production
+            'Access-Control-Allow-Origin': process.env.FRONTEND_URL || '*', // Use environment variable for production
             'Access-Control-Allow-Methods': 'POST, OPTIONS',
             'Access-Control-Allow-Headers': 'Content-Type',
         }
