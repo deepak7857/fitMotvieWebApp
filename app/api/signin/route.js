@@ -2,6 +2,7 @@ import connectDB from "@/db/connectDb";
 import signup from "@/models/signup";
 import { NextResponse } from "next/server";
 import CryptoJS from "crypto-js";
+
 export async function POST(request) {
     try {
         await connectDB();
@@ -15,21 +16,26 @@ export async function POST(request) {
 
         // Find the user by email
         const userData = await signup.findOne({ email: email });
-        const bytes=CryptoJS.AES.decrypt(userData.password, 'secret123')
-        var originalText = bytes.toString(CryptoJS.enc.Utf8);
-        // Log the entire user data
-        console.log(originalText)
+
+        // Check if userData exists
         if (!userData) {
             return NextResponse.json({ error: "User not found" }, { status: 404 });
         }
 
-        // Check password if it's stored in plain text (not recommended)
+        // Decrypt the password
+        const bytes = CryptoJS.AES.decrypt(userData.password, 'secret123');
+        const originalText = bytes.toString(CryptoJS.enc.Utf8);
+
+        // Log the decrypted password for debugging
+        console.log("Decrypted Password:", originalText);
+
+        // Check password
         if (originalText === password) {
             const responseData = { 
                 message: "You are now logged in!",
                 user: userData // Send the full user data back to the client
             };
-            return NextResponse.json({ responseData, status: 200 });
+            return NextResponse.json({ responseData }, { status: 200 });
         } else {
             return NextResponse.json({ error: "Invalid password" }, { status: 401 });
         }
